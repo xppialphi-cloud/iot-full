@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - IOT Gateway</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .dashboard-box {
+            background: #ffffff;
+            width: 450px;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        h1 {
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        p {
+            color: #4b5563;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .user-email {
+            color: #4f46e5;
+            font-weight: bold;
+        }
+        .btn-logout {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 12px 30px;
+            background-color: #dc2626;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-logout:hover {
+            background-color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-box">
+        <h1>Kushiraxan Dashboard-kaaga Caamiga ah!</h1>
+        
+        <!-- Halkan waxaa loogu talagalay Flask email-kiisa ama kan ka yimaada OAuth JavaScript -->
+        <p>Waxaad ku soo gashay email-ka: <span class="user-email" id="display-email">{% if email %}{{ email }}{% else %}Xaqiijinaya...{% endif %}</span></p>
+        <p>Kani waa deegaankaaga gaarka ah ee amniga ah.</p>
+
+        <!-- Badhamada bixitaanka nidaamka -->
+        <a href="http://127.0.0" class="btn-logout" id="logout-link">Log Out (Ka Bax)</a>
+    </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const emailSpan = document.getElementById('display-email');
+        const logoutLink = document.getElementById('logout-link');
+        
+        // 1. Hubi haddii uu jiro Access Token URL-ka dhalaalaya ka yimid Supabase Auth (#access_token=...)
+        const hash = window.location.hash;
+        
+        if (hash) {
+            // Ka dhex baadh token-ka dhex jira URL-ka
+            const params = new URLSearchParams(hash.replace("#", "?"));
+            const accessToken = params.get("access_token");
+
+            if (accessToken) {
+                try {
+                    // Kala saar oo decode garee JWT Token-ka si aan u helno Email-ka qofka dhabta ah
+                    const base64Url = accessToken.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                        return '%' + ('0' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join(''));
+
+                    const userData = JSON.parse(jsonPayload);
+                    
+                    if (userData && userData.email) {
+                        // Ku muuji iimeelka shaashadda
+                        emailSpan.textContent = userData.email;
+                        console.log("OAuth Isticmaale si guul leh ayaa loo aqoonsaday: " + userData.email);
+                    }
+                } catch (e) {
+                    console.error("Token-ka waa la akhriyi waayey:", e);
+                    if (emailSpan.textContent === "Xaqiijinaya...") {
+                        emailSpan.textContent = "OAuth User";
+                    }
+                }
+            }
+        }
+        
+        // 2. Hubi nidaamka Logout-ka haddii aad joogto port-ka internet-ka ee rasmiga ah
+        if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+            logoutLink.href = "/logout"; 
+        }
+    });
+</script>
+
+</body>
+</html>
